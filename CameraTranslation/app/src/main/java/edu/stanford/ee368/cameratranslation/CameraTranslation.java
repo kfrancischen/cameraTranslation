@@ -1,11 +1,50 @@
-/*package edu.stanford.ee368.cameratranslation;
+package edu.stanford.ee368.cameratranslation;
 
+import org.opencv.android.BaseLoaderCallback;
+import org.opencv.android.CameraBridgeViewBase.CvCameraViewFrame;
+import org.opencv.android.LoaderCallbackInterface;
+import org.opencv.android.OpenCVLoader;
+import org.opencv.core.Core;
+import org.opencv.core.Mat;
+import org.opencv.core.MatOfRect;
+import org.opencv.core.Rect;
+import org.opencv.core.Scalar;
+import org.opencv.core.Size;
 import org.opencv.android.CameraBridgeViewBase;
 import org.opencv.android.CameraBridgeViewBase.CvCameraViewListener2;
+import org.opencv.objdetect.CascadeClassifier;
+import org.opencv.imgproc.Imgproc;
+
+
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.Manifest;
+import android.app.Activity;
+import android.content.Context;
+import android.content.pm.PackageManager;
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Paint;
+import android.graphics.RectF;
+import android.hardware.Camera;
+import android.hardware.Camera.PreviewCallback;
+import android.os.Bundle;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
+import android.view.SurfaceHolder;
+import android.view.SurfaceView;
+import android.view.View;
+import android.view.ViewGroup;
+import android.view.Window;
+import android.view.WindowManager;
 
-public class CameraTranslation extends AppCompatActivity implements CvCameraViewListener2 {
+import java.io.IOException;
+
+public class CameraTranslation extends Activity implements CvCameraViewListener2 {
+
+    /* defining class private variables*/
+    private CameraBridgeViewBase mOpenCVCameraView;
+
 
 
     @Override
@@ -24,6 +63,15 @@ public class CameraTranslation extends AppCompatActivity implements CvCameraView
     }
 
     publid void onDestroy(){
+        super.onDestroy();
+
+    }
+
+    public void onCameraViewStarted(int width, int height){
+
+    }
+
+    public void onCameraViewStopped(){
 
     }
 
@@ -31,8 +79,9 @@ public class CameraTranslation extends AppCompatActivity implements CvCameraView
     public Mat onCameraFrame(CvCameraViewFrame inputFrame){
 
     }
-}*/
-package edu.stanford.ee368.cameratranslation;
+}
+
+/*package edu.stanford.ee368.cameratranslation;
 
 import android.Manifest;
 import android.app.Activity;
@@ -58,7 +107,7 @@ import java.io.IOException;
 
 // ----------------------------------------------------------------------
 
-public class CameraTranslation extends Activity {
+public class CameraTranslation extends Activity{
     private Preview mPreview;
     private DrawOnTop mDrawOnTop;
 
@@ -429,4 +478,4 @@ class Preview extends SurfaceView implements SurfaceHolder.Callback {
         mCamera.startPreview();
     }
 
-}
+}*/
