@@ -21,14 +21,9 @@ import org.opencv.imgproc.Imgproc;
 
 
 import android.content.Intent;
-import android.media.Image;
-import android.support.v4.util.SparseArrayCompat;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.Manifest;
 import android.app.Activity;
 import android.content.Context;
-import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -56,12 +51,8 @@ import android.util.SparseArray;
 import java.io.IOException;
 import java.util.Locale;
 
-import com.google.android.gms.common.ConnectionResult;
-import com.google.android.gms.common.GoogleApiAvailability;
-import com.google.android.gms.common.api.CommonStatusCodes;
 import com.google.android.gms.vision.text.TextBlock;
 import com.google.android.gms.vision.text.TextRecognizer;
-import com.google.android.gms.vision.Detector;
 import com.google.android.gms.vision.Frame;
 
 public class CameraTranslation extends Activity implements CvCameraViewListener2, View.OnTouchListener {
@@ -225,8 +216,9 @@ public class CameraTranslation extends Activity implements CvCameraViewListener2
             TextBlock textBlock = items.valueAt(i);
             if (textBlock != null && textBlock.getValue() != null) {
                 Log.i("OcrDetectorProcessor", "Text detected! " + textBlock.getValue());
+                recognizedText = recognizedText.concat(textBlock.getValue());
             }
-            recognizedText = recognizedText.concat(textBlock.getValue());
+
         }
         if(!recognizedText.equals(preText)){
             mGraphicOverLay.clear();
