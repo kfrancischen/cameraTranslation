@@ -6,7 +6,7 @@ android:versionName="3.01">
 
 <application
     android:label="@string/app_name"
-    android:icon="@mipmap/ic_launcher"
+    android:icon="@mipmap/ic_launcher_1"
     android:theme="@android:style/Theme.NoTitleBar.Fullscreen" >
 
     <activity android:name="CameraTranslation"
