@@ -1,8 +1,10 @@
 package edu.stanford.ee368.cameratranslation;
+/**
+ * Created by francischen on 11/17/16.
+ */
 
 import org.opencv.android.BaseLoaderCallback;
 import org.opencv.android.CameraBridgeViewBase.CvCameraViewFrame;
-import org.opencv.android.JavaCameraView;
 import org.opencv.android.LoaderCallbackInterface;
 import org.opencv.android.OpenCVLoader;
 import org.opencv.core.Core;
@@ -17,6 +19,7 @@ import org.opencv.objdetect.CascadeClassifier;
 import org.opencv.imgproc.Imgproc;
 
 
+import android.media.Image;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.Manifest;
@@ -33,21 +36,27 @@ import android.os.Bundle;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.util.Log;
+import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
+import android.widget.ImageButton;
+import android.speech.tts.TextToSpeech;
 
 import java.io.IOException;
+import java.util.Locale;
 
 
-public class CameraTranslation extends Activity implements CvCameraViewListener2 {
+public class CameraTranslation extends Activity implements CvCameraViewListener2, View.OnTouchListener {
 
     /* defining class private variables*/
     private static final String TAG = "translation::Activity";
-    private CameraBridgeViewBase mOpenCVCameraView;
+    private TranslationCameraView mOpenCVCameraView;
+    private ImageButton voiceButton;
+    private TextToSpeech voiceTalker;
     private Mat mRgba;
     private Mat mGray;
 
@@ -58,7 +67,7 @@ public class CameraTranslation extends Activity implements CvCameraViewListener2
             switch (status){
                 case LoaderCallbackInterface.SUCCESS: {
                     Log.i(TAG, "OpenCV loaded successfully");
-                    //mOpenCVCameraView.setOnTouchListener(CameraTranslation.this);
+                    mOpenCVCameraView.setOnTouchListener(CameraTranslation.this);
                     mOpenCVCameraView.enableView();
                 }break;
                 default:
@@ -69,19 +78,45 @@ public class CameraTranslation extends Activity implements CvCameraViewListener2
         }
     };
 
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         Log.i(TAG, "called onCreate");
         super.onCreate(savedInstanceState);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-        //mOpenCVCameraView = (CameraBridgeViewBase) new JavaCameraView(this, -1);
+        //mOpenCVCameraView = new TranslationCameraView(this, -1);
         //setContentView(mOpenCVCameraView);
         setContentView(R.layout.camera_translation_view);
 
-        mOpenCVCameraView = (CameraBridgeViewBase) findViewById(R.id.camera_surface_view);
-        mOpenCVCameraView.setVisibility(CameraBridgeViewBase.VISIBLE);
+        mOpenCVCameraView = (TranslationCameraView) findViewById(R.id.camera_surface_view);
+        mOpenCVCameraView.setVisibility(TranslationCameraView.VISIBLE);
         mOpenCVCameraView.setCvCameraViewListener(this);
+
+        voiceButton = (ImageButton) findViewById(R.id.voice_button);
+        voiceTalker = new TextToSpeech(getApplicationContext(), new TextToSpeech.OnInitListener(){
+            @Override
+            public void onInit(int status){
+                if(status != TextToSpeech.ERROR){
+                    voiceTalker.setLanguage(Locale.US);
+                }
+            }
+        });
+
+        voiceButton.setOnClickListener(new View.OnClickListener(){
+            @Override
+            public void onClick(View view){
+                // TODO: here we can put a function for voicing
+                /* just an example of hello world */
+                String str = "hello world";
+                voiceTalker.speak(str, TextToSpeech.QUEUE_FLUSH, null, "hello world");
+
+            }
+        });
+    }
+
+
+    public boolean onTouch(View view, MotionEvent event){
+        mOpenCVCameraView.focusOnTouch(event);
+        return true;
     }
 
     @Override
@@ -126,6 +161,8 @@ public class CameraTranslation extends Activity implements CvCameraViewListener2
     public Mat onCameraFrame(CvCameraViewFrame inputFrame){
         mRgba = inputFrame.rgba();
         mGray = inputFrame.gray();
+        // TODO: text recognition
         return mRgba;
     }
+
 }
