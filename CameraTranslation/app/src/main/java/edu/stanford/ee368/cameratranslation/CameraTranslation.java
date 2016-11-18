@@ -7,6 +7,7 @@ import org.opencv.android.BaseLoaderCallback;
 import org.opencv.android.CameraBridgeViewBase.CvCameraViewFrame;
 import org.opencv.android.LoaderCallbackInterface;
 import org.opencv.android.OpenCVLoader;
+import org.opencv.android.Utils;
 import org.opencv.core.Core;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfRect;
@@ -19,13 +20,16 @@ import org.opencv.objdetect.CascadeClassifier;
 import org.opencv.imgproc.Imgproc;
 
 
+import android.content.Intent;
 import android.media.Image;
+import android.support.v4.util.SparseArrayCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.Manifest;
 import android.app.Activity;
 import android.content.Context;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
@@ -35,6 +39,7 @@ import android.hardware.Camera.PreviewCallback;
 import android.os.Bundle;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
+import android.content.IntentFilter;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
@@ -45,10 +50,19 @@ import android.view.Window;
 import android.view.WindowManager;
 import android.widget.ImageButton;
 import android.speech.tts.TextToSpeech;
+import android.widget.Toast;
+import android.util.SparseArray;
 
 import java.io.IOException;
 import java.util.Locale;
 
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.GoogleApiAvailability;
+import com.google.android.gms.common.api.CommonStatusCodes;
+import com.google.android.gms.vision.text.TextBlock;
+import com.google.android.gms.vision.text.TextRecognizer;
+import com.google.android.gms.vision.Detector;
+import com.google.android.gms.vision.Frame;
 
 public class CameraTranslation extends Activity implements CvCameraViewListener2, View.OnTouchListener {
 
@@ -59,7 +73,10 @@ public class CameraTranslation extends Activity implements CvCameraViewListener2
     private TextToSpeech voiceTalker;
     private Mat mRgba;
     private Mat mGray;
-
+    private String recognizedText = "";
+    private String preText = "";
+    private TextRecognizer textRecognizer;
+    private GraphicOverlay<OcrGraphic> mGraphicOverLay;
     /* defining class for call back*/
     private BaseLoaderCallback mLoaderCallback = new BaseLoaderCallback(this) {
         @Override
@@ -86,11 +103,15 @@ public class CameraTranslation extends Activity implements CvCameraViewListener2
         //mOpenCVCameraView = new TranslationCameraView(this, -1);
         //setContentView(mOpenCVCameraView);
         setContentView(R.layout.camera_translation_view);
-
+        /* initializing camera view */
         mOpenCVCameraView = (TranslationCameraView) findViewById(R.id.camera_surface_view);
         mOpenCVCameraView.setVisibility(TranslationCameraView.VISIBLE);
         mOpenCVCameraView.setCvCameraViewListener(this);
 
+        /* initializing graphicOverLay */
+        mGraphicOverLay = (GraphicOverlay<OcrGraphic>) findViewById(R.id.graphic_overlay);
+
+        /* initializing voice talker */
         voiceButton = (ImageButton) findViewById(R.id.voice_button);
         voiceTalker = new TextToSpeech(getApplicationContext(), new TextToSpeech.OnInitListener(){
             @Override
@@ -101,16 +122,36 @@ public class CameraTranslation extends Activity implements CvCameraViewListener2
             }
         });
 
+        /* initializing voice button */
         voiceButton.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View view){
                 // TODO: here we can put a function for voicing
                 /* just an example of hello world */
-                String str = "hello world";
-                voiceTalker.speak(str, TextToSpeech.QUEUE_FLUSH, null, "hello world");
-
+                if(recognizedText.length() != 0) {
+                    Log.i(TAG, "onClick: text to speech successful");
+                    voiceTalker.speak(recognizedText, TextToSpeech.QUEUE_FLUSH, null, "translation");
+                }
+                else{
+                    Log.i(TAG, "onClick: text to speech failed. Text is empty.");
+                }
             }
         });
+
+        Context context = getApplicationContext();
+        textRecognizer = new TextRecognizer.Builder(context).build();
+
+        // check whether the text recognizer is operational
+        if(!textRecognizer.isOperational()) {
+            Log.e(TAG, "Detector dependencies are not avaible");
+            // check storage
+            IntentFilter lowStorageFilter = new IntentFilter(Intent.ACTION_DEVICE_STORAGE_LOW);
+            boolean hasLowStorage = registerReceiver(null, lowStorageFilter) != null;
+            if (hasLowStorage) {
+                Log.e(TAG, "Low storage!");
+            }
+
+        }
     }
 
 
@@ -125,16 +166,20 @@ public class CameraTranslation extends Activity implements CvCameraViewListener2
         if(mOpenCVCameraView != null){
             mOpenCVCameraView.disableView();
         }
+        if(voiceTalker != null){
+            voiceTalker.stop();
+            voiceTalker.shutdown();
+        }
     }
 
     @Override
     public void onResume(){
         super.onResume();
         if (!OpenCVLoader.initDebug()) {
-            Log.d(TAG, "Internal OpenCV library not found. Using OpenCV Manager for initialization");
+            Log.e(TAG, "Internal OpenCV library not found. Using OpenCV Manager for initialization");
             OpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION_3_0_0, this, mLoaderCallback);
         } else {
-            Log.d(TAG, "OpenCV library found inside package. Using it!");
+            Log.e(TAG, "OpenCV library found inside package. Using it!");
             mLoaderCallback.onManagerConnected(LoaderCallbackInterface.SUCCESS);
         }
     }
@@ -143,6 +188,10 @@ public class CameraTranslation extends Activity implements CvCameraViewListener2
         super.onDestroy();
         if(mOpenCVCameraView != null){
             mOpenCVCameraView.disableView();
+        }
+        if(voiceTalker != null){
+            voiceTalker.stop();
+            voiceTalker.shutdown();
         }
 
     }
@@ -159,9 +208,34 @@ public class CameraTranslation extends Activity implements CvCameraViewListener2
 
     @Override
     public Mat onCameraFrame(CvCameraViewFrame inputFrame){
+
+        Log.i(TAG, "got frame");
         mRgba = inputFrame.rgba();
-        mGray = inputFrame.gray();
-        // TODO: text recognition
+        //mGray = inputFrame.gray();
+
+        /* the following is implemented using Google service */
+        //mGraphicOverLay.clear();
+        recognizedText = "";
+        Bitmap bitMap = Bitmap.createBitmap(mRgba.cols(), mRgba.rows(), Bitmap.Config.ARGB_8888);
+
+        Utils.matToBitmap(mRgba, bitMap);
+        Frame frame = new Frame.Builder().setBitmap(bitMap).build();
+        SparseArray<TextBlock> items = textRecognizer.detect(frame);
+        for(int i = 0; i < items.size(); i++) {
+            TextBlock textBlock = items.valueAt(i);
+            if (textBlock != null && textBlock.getValue() != null) {
+                Log.i("OcrDetectorProcessor", "Text detected! " + textBlock.getValue());
+            }
+            recognizedText = recognizedText.concat(textBlock.getValue());
+        }
+        if(!recognizedText.equals(preText)){
+            mGraphicOverLay.clear();
+            for(int i = 0; i < items.size(); i++){
+                OcrGraphic graphic = new OcrGraphic(mGraphicOverLay, items.valueAt(i));
+                mGraphicOverLay.add(graphic);
+            }
+            preText = recognizedText;
+        }
         return mRgba;
     }
 

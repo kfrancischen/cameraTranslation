@@ -15,6 +15,7 @@ import android.graphics.RectF;
 import android.hardware.Camera;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
+import android.view.ViewGroup;
 import android.widget.Toast;
 
 public class TranslationCameraView extends JavaCameraView implements AutoFocusCallback{

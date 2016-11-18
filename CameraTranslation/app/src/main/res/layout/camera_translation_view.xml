@@ -8,7 +8,11 @@
     <edu.stanford.ee368.cameratranslation.TranslationCameraView
         android:layout_width="fill_parent"
         android:layout_height="fill_parent"
-        android:id="@+id/camera_surface_view" />
+        android:id="@+id/camera_surface_view"/>
+    <edu.stanford.ee368.cameratranslation.GraphicOverlay
+        android:id="@+id/graphic_overlay"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
 
     <ImageButton
         android:layout_width="55dp"

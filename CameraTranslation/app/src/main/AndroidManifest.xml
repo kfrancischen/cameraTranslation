@@ -8,6 +8,12 @@ android:versionName="3.01">
     android:label="@string/app_name"
     android:icon="@mipmap/ic_launcher_1"
     android:theme="@android:style/Theme.NoTitleBar.Fullscreen" >
+    <meta-data
+        android:name="com.google.android.gms.version"
+        android:value="@integer/google_play_services_version" />
+    <meta-data
+        android:name="com.google.android.gms.vision.DEPENDENCIES"
+        android:value="ocr" />
 
     <activity android:name="CameraTranslation"
         android:label="@string/app_name"
