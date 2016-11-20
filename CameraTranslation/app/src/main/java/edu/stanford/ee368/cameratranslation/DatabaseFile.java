@@ -14,7 +14,7 @@ import java.util.regex.Pattern;
 
 public class DatabaseFile {
     private  HashMap<String, String> vocabulary = new HashMap();
-    public void DatabaseFile(){
+    public DatabaseFile(){
         int k = 0;
         for(int i = 0; i < chineseVocabulary.size(); i++){
             for(int j = 0; j < 3; j++ ) {
