@@ -21,6 +21,7 @@ import org.opencv.imgproc.Imgproc;
 
 
 import android.content.Intent;
+import android.media.Image;
 import android.os.Bundle;
 import android.app.Activity;
 import android.content.Context;
@@ -61,6 +62,7 @@ public class CameraTranslation extends Activity implements CvCameraViewListener2
     private static final String TAG = "translation::Activity";
     private TranslationCameraView mOpenCVCameraView;
     private ImageButton voiceButton;
+    private ImageButton searchButton;
     private TextToSpeech voiceTalker;
     private Mat mRgba;
     private Mat mGray;
@@ -112,7 +114,8 @@ public class CameraTranslation extends Activity implements CvCameraViewListener2
                 }
             }
         });
-
+        /* initializing search start button */
+        searchButton = (ImageButton) findViewById(R.id.search_button);
         /* initializing voice button */
         voiceButton.setOnClickListener(new View.OnClickListener(){
             @Override
@@ -143,6 +146,7 @@ public class CameraTranslation extends Activity implements CvCameraViewListener2
             }
 
         }
+
     }
 
 
