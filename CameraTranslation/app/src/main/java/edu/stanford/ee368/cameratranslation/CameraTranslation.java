@@ -59,6 +59,10 @@ import com.google.android.gms.vision.Frame;
 public class CameraTranslation extends Activity implements CvCameraViewListener2, View.OnTouchListener {
 
     /* defining class private variables*/
+    // initialize the database
+    private DatabaseFile database = new DatabaseFile();
+
+    // initialize UI activities
     private static final String TAG = "translation::Activity";
     private TranslationCameraView mOpenCVCameraView;
     private ImageButton voiceButton;
@@ -70,6 +74,7 @@ public class CameraTranslation extends Activity implements CvCameraViewListener2
     private String preText = "";
     private TextRecognizer textRecognizer;
     private GraphicOverlay<OcrGraphic> mGraphicOverLay;
+
     /* defining class for call back*/
     private BaseLoaderCallback mLoaderCallback = new BaseLoaderCallback(this) {
         @Override
