@@ -7,6 +7,7 @@ package edu.stanford.ee368.cameratranslation;
 import org.opencv.android.JavaCameraView;
 import java.util.ArrayList;
 import java.util.List;
+import java.lang.Math;
 
 import android.hardware.Camera.AutoFocusCallback;
 import android.content.Context;
@@ -15,8 +16,8 @@ import android.graphics.RectF;
 import android.hardware.Camera;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
-import android.view.ViewGroup;
 import android.widget.Toast;
+
 
 public class TranslationCameraView extends JavaCameraView implements AutoFocusCallback{
 
@@ -42,7 +43,42 @@ public class TranslationCameraView extends JavaCameraView implements AutoFocusCa
         disconnectCamera();
         connectCamera((int)resolution.width, (int)resolution.height);
     }
+    /** implement zoom in functionality **/
+    private double mDist = 0;
+    public void zoomOnTouch(MotionEvent event){
+        Camera.Parameters params = mCamera.getParameters();
+        if(event.getAction() == MotionEvent.ACTION_POINTER_DOWN){
+            mDist = getFingerSpacing(event);
+        }
+        else if(event.getAction() == MotionEvent.ACTION_MOVE && params.isZoomSupported()){
+            int maxZoom = params.getMaxZoom();
+            int zoom = params.getZoom();
+            double newDist = getFingerSpacing(event);
+            if(newDist > mDist){
+                if(zoom < maxZoom){
+                    zoom++;
+                }
+            }
+            else if(newDist < mDist){
+                if(zoom > 0){
+                    zoom--;
+                }
+            }
 
+            mDist = newDist;
+            params.setZoom(zoom);
+            mCamera.setParameters(params);
+        }
+    }
+
+    /** Determine the space between the first two fingers */
+    private double getFingerSpacing(MotionEvent event) {
+        double x = event.getX(0) - event.getX(1);
+        double y = event.getY(0) - event.getY(1);
+        return Math.sqrt(x * x + y * y);
+    }
+
+    /** implement focus on touch functionality **/
     public void focusOnTouch(MotionEvent event) {
         Rect focusRect = calculateTapArea(event.getRawX(), event.getRawY(), 1f);
         Rect meteringRect = calculateTapArea(event.getRawX(), event.getRawY(), 1.5f);

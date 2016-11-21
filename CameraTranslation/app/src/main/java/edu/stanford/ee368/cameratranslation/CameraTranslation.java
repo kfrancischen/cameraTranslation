@@ -58,7 +58,7 @@ import com.google.android.gms.vision.Frame;
 
 public class CameraTranslation extends Activity implements CvCameraViewListener2, View.OnTouchListener {
 
-    /* defining class private variables*/
+    /** defining class private variables**/
     // initialize the database
     private DatabaseFile database = new DatabaseFile();
 
@@ -76,7 +76,7 @@ public class CameraTranslation extends Activity implements CvCameraViewListener2
     private TextRecognizer textRecognizer;
     private GraphicOverlay<OcrGraphic> mGraphicOverLay;
 
-    /* defining class for call back*/
+    /** defining class for call back **/
     private BaseLoaderCallback mLoaderCallback = new BaseLoaderCallback(this) {
         @Override
         public  void onManagerConnected(int status){
@@ -102,20 +102,23 @@ public class CameraTranslation extends Activity implements CvCameraViewListener2
         //mOpenCVCameraView = new TranslationCameraView(this, -1);
         //setContentView(mOpenCVCameraView);
         setContentView(R.layout.camera_translation_view);
-        /* initializing camera view */
+        /** initializing camera view **/
         mOpenCVCameraView = (TranslationCameraView) findViewById(R.id.camera_surface_view);
         mOpenCVCameraView.setVisibility(TranslationCameraView.VISIBLE);
         mOpenCVCameraView.setCvCameraViewListener(this);
 
-        /* initializing graphicOverLay */
+        /** initializing graphicOverLay **/
         mGraphicOverLay = (GraphicOverlay<OcrGraphic>) findViewById(R.id.graphic_overlay);
 
-        /* initializing search start button */
+        /** initializing search start button **/
         searchButton = (ImageButton) findViewById(R.id.search_button);
         searchButton.setOnTouchListener(new View.OnTouchListener(){
             @Override
             public boolean onTouch(View v, MotionEvent event){
                 if(event.getAction() == MotionEvent.ACTION_DOWN){
+                    if(voiceTalker.isSpeaking()){
+                        voiceTalker.stop();
+                    }
                     mGraphicOverLay.clear();
                     recognizedText = "";
                     isSearchButtonPressed = true;
@@ -128,7 +131,7 @@ public class CameraTranslation extends Activity implements CvCameraViewListener2
         });
 
 
-        /* initializing voice talker */
+        /** initializing voice talker **/
         voiceTalker = new TextToSpeech(getApplicationContext(), new TextToSpeech.OnInitListener(){
             @Override
             public void onInit(int status){
@@ -138,13 +141,15 @@ public class CameraTranslation extends Activity implements CvCameraViewListener2
             }
         });
 
-        /* initializing voice button */
+        /** initializing voice button **/
         voiceButton = (ImageButton) findViewById(R.id.voice_button);
         voiceButton.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View view){
                 // TODO: here we can put a function for voicing
-                /* just an example of hello world */
+                if(voiceTalker.isSpeaking()){
+                    voiceTalker.stop();
+                }
                 if(recognizedText.length() != 0) {
                     Log.i(TAG, "onClick: text to speech successful");
                     voiceTalker.speak(recognizedText, TextToSpeech.QUEUE_FLUSH, null, "translation");
@@ -172,12 +177,18 @@ public class CameraTranslation extends Activity implements CvCameraViewListener2
 
     }
 
-    // add autofocus
+    /** add autofocus and autozoom **/
     public boolean onTouch(View view, MotionEvent event){
-        mOpenCVCameraView.focusOnTouch(event);
-        // touch to clear recognition results
-        mGraphicOverLay.clear();
-        recognizedText = "";
+        int action = event.getAction();
+        if(event.getPointerCount() > 1){
+            mOpenCVCameraView.zoomOnTouch(event);
+        }
+        else {
+            mOpenCVCameraView.focusOnTouch(event);
+            // touch to clear recognition results
+            mGraphicOverLay.clear();
+            recognizedText = "";
+        }
         return true;
     }
 
@@ -238,9 +249,9 @@ public class CameraTranslation extends Activity implements CvCameraViewListener2
         }
         Log.i(TAG, "search button is pressed");
 
-        /*
+        /**
             the following is implemented using Google service
-        */
+        **/
         recognizedText = "";
         Bitmap bitMap = Bitmap.createBitmap(mRgba.cols(), mRgba.rows(), Bitmap.Config.ARGB_8888);
 
