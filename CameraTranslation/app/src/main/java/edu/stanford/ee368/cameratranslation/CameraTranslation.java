@@ -67,11 +67,12 @@ public class CameraTranslation extends Activity implements CvCameraViewListener2
     private TranslationCameraView mOpenCVCameraView;
     private ImageButton voiceButton;
     private ImageButton searchButton;
+    private boolean isSearchButtonPressed = false;
+
     private TextToSpeech voiceTalker;
     private Mat mRgba;
     private Mat mGray;
     private String recognizedText = "";
-    private String preText = "";
     private TextRecognizer textRecognizer;
     private GraphicOverlay<OcrGraphic> mGraphicOverLay;
 
@@ -109,8 +110,25 @@ public class CameraTranslation extends Activity implements CvCameraViewListener2
         /* initializing graphicOverLay */
         mGraphicOverLay = (GraphicOverlay<OcrGraphic>) findViewById(R.id.graphic_overlay);
 
+        /* initializing search start button */
+        searchButton = (ImageButton) findViewById(R.id.search_button);
+        searchButton.setOnTouchListener(new View.OnTouchListener(){
+            @Override
+            public boolean onTouch(View v, MotionEvent event){
+                if(event.getAction() == MotionEvent.ACTION_DOWN){
+                    mGraphicOverLay.clear();
+                    recognizedText = "";
+                    isSearchButtonPressed = true;
+                }
+                else if(event.getAction() == MotionEvent.ACTION_UP){
+                    isSearchButtonPressed = false;
+                }
+                return false;
+            }
+        });
+
+
         /* initializing voice talker */
-        voiceButton = (ImageButton) findViewById(R.id.voice_button);
         voiceTalker = new TextToSpeech(getApplicationContext(), new TextToSpeech.OnInitListener(){
             @Override
             public void onInit(int status){
@@ -119,9 +137,9 @@ public class CameraTranslation extends Activity implements CvCameraViewListener2
                 }
             }
         });
-        /* initializing search start button */
-        searchButton = (ImageButton) findViewById(R.id.search_button);
+
         /* initializing voice button */
+        voiceButton = (ImageButton) findViewById(R.id.voice_button);
         voiceButton.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View view){
@@ -142,7 +160,7 @@ public class CameraTranslation extends Activity implements CvCameraViewListener2
 
         // check whether the text recognizer is operational
         if(!textRecognizer.isOperational()) {
-            Log.e(TAG, "Detector dependencies are not avaible");
+            Log.e(TAG, "Detector dependencies are not available");
             // check storage
             IntentFilter lowStorageFilter = new IntentFilter(Intent.ACTION_DEVICE_STORAGE_LOW);
             boolean hasLowStorage = registerReceiver(null, lowStorageFilter) != null;
@@ -154,9 +172,12 @@ public class CameraTranslation extends Activity implements CvCameraViewListener2
 
     }
 
-
+    // add autofocus
     public boolean onTouch(View view, MotionEvent event){
         mOpenCVCameraView.focusOnTouch(event);
+        // touch to clear recognition results
+        mGraphicOverLay.clear();
+        recognizedText = "";
         return true;
     }
 
@@ -208,13 +229,18 @@ public class CameraTranslation extends Activity implements CvCameraViewListener2
 
     @Override
     public Mat onCameraFrame(CvCameraViewFrame inputFrame){
-
         Log.i(TAG, "got frame");
         mRgba = inputFrame.rgba();
         //mGray = inputFrame.gray();
+        if(!isSearchButtonPressed){
+            Log.i(TAG, "search button not pressed");
+            return mRgba;
+        }
+        Log.i(TAG, "search button is pressed");
 
-        /* the following is implemented using Google service */
-        //mGraphicOverLay.clear();
+        /*
+            the following is implemented using Google service
+        */
         recognizedText = "";
         Bitmap bitMap = Bitmap.createBitmap(mRgba.cols(), mRgba.rows(), Bitmap.Config.ARGB_8888);
 
@@ -226,17 +252,12 @@ public class CameraTranslation extends Activity implements CvCameraViewListener2
             if (textBlock != null && textBlock.getValue() != null) {
                 Log.i("OcrDetectorProcessor", "Text detected! " + textBlock.getValue());
                 recognizedText = recognizedText.concat(textBlock.getValue());
-            }
-
-        }
-        if(!recognizedText.equals(preText)){
-            mGraphicOverLay.clear();
-            for(int i = 0; i < items.size(); i++){
                 OcrGraphic graphic = new OcrGraphic(mGraphicOverLay, items.valueAt(i));
                 mGraphicOverLay.add(graphic);
+
             }
-            preText = recognizedText;
         }
+
         return mRgba;
     }
 
