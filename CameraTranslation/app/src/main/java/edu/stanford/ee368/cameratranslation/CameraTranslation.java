@@ -9,13 +9,19 @@ import org.opencv.android.LoaderCallbackInterface;
 import org.opencv.android.OpenCVLoader;
 import org.opencv.android.Utils;
 import org.opencv.core.Core;
+import org.opencv.core.CvType;
+import org.opencv.core.KeyPoint;
 import org.opencv.core.Mat;
+import org.opencv.core.MatOfKeyPoint;
+import org.opencv.core.MatOfPoint;
 import org.opencv.core.MatOfRect;
+import org.opencv.core.Point;
 import org.opencv.core.Rect;
 import org.opencv.core.Scalar;
 import org.opencv.core.Size;
 import org.opencv.android.CameraBridgeViewBase;
 import org.opencv.android.CameraBridgeViewBase.CvCameraViewListener2;
+import org.opencv.features2d.FeatureDetector;
 import org.opencv.objdetect.CascadeClassifier;
 import org.opencv.imgproc.Imgproc;
 
@@ -50,6 +56,8 @@ import android.widget.Toast;
 import android.util.SparseArray;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 
 import com.google.android.gms.vision.text.TextBlock;
@@ -122,8 +130,11 @@ public class CameraTranslation extends Activity implements CvCameraViewListener2
                     mGraphicOverLay.clear();
                     recognizedText = "";
                     isSearchButtonPressed = true;
+                    // this line is changed for block detection
+                    //isSearchButtonPressed = !isSearchButtonPressed;
                 }
                 else if(event.getAction() == MotionEvent.ACTION_UP){
+                    // this line is changed for block detection
                     isSearchButtonPressed = false;
                 }
                 return false;
@@ -213,7 +224,7 @@ public class CameraTranslation extends Activity implements CvCameraViewListener2
             Log.e(TAG, "Internal OpenCV library not found. Using OpenCV Manager for initialization");
             OpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION_3_0_0, this, mLoaderCallback);
         } else {
-            Log.e(TAG, "OpenCV library found inside package. Using it!");
+            Log.i(TAG, "OpenCV library found inside package. Using it!");
             mLoaderCallback.onManagerConnected(LoaderCallbackInterface.SUCCESS);
         }
     }
@@ -254,6 +265,7 @@ public class CameraTranslation extends Activity implements CvCameraViewListener2
         /**
             the following is implemented using Google service
         **/
+        /*
         recognizedText = "";
         Bitmap bitMap = Bitmap.createBitmap(mRgba.cols(), mRgba.rows(), Bitmap.Config.ARGB_8888);
 
@@ -270,9 +282,86 @@ public class CameraTranslation extends Activity implements CvCameraViewListener2
 
             }
         }
+        */
         /**
-         * the following is implemented using OpenCV feature detector and Google text recognition.
+         * the following is implemented using OpenCV feature detector
          */
+
+        mGray = inputFrame.gray();
+        Scalar CONTOUR_COLOR = new Scalar(255);
+        MatOfKeyPoint matKeyPoint = new MatOfKeyPoint();
+        List<KeyPoint> listOfKeyPoints;
+        KeyPoint keyPoint;
+        Mat mask = Mat.zeros(mGray.size(), CvType.CV_8UC1);
+        int rectanX1, rectanX2, rectanY1, rectanY2;
+        FeatureDetector detector = FeatureDetector.create(FeatureDetector.MSER);
+        detector.detect(mGray, matKeyPoint);
+        listOfKeyPoints = matKeyPoint.toList();
+        for(int i = 0; i < listOfKeyPoints.size(); i++){
+            keyPoint = listOfKeyPoints.get(i);
+            rectanX1 = (int)(keyPoint.pt.x - 0.5 * keyPoint.size);
+            rectanY1 = (int)(keyPoint.pt.y - 0.5 * keyPoint.size);
+            rectanX2 = (int)(keyPoint.size);
+            rectanY2 = (int)(keyPoint.size);
+            if(rectanX1 <= 0)
+                rectanX1 = 1;
+            if(rectanY1 <= 0)
+                rectanY1 = 1;
+            if((rectanX1 + rectanX2) > mGray.width())
+                rectanX2 = mGray.width() - rectanX1;
+            if((rectanY1 + rectanY2) > mGray.height())
+                rectanY2 = mGray.height() - rectanY1;
+
+            Rect rectant = new Rect(rectanX1, rectanY1, rectanX2, rectanY2);
+            try{
+                Mat roi = new Mat(mask, rectant);
+                roi.setTo(CONTOUR_COLOR);
+            }
+            catch (Exception ex){
+                Log.e(TAG, "mat roi error " + ex.getMessage());
+            }
+
+        }
+
+        Mat morbyte = new Mat();
+        Mat hierachy = new Mat();
+        Mat kernel = new Mat(1, 50, CvType.CV_8UC1, Scalar.all(255));
+        List<MatOfPoint> contour = new ArrayList<>();
+        Scalar zeros = new Scalar(0, 0, 0);
+
+        Imgproc.morphologyEx(mask, morbyte, Imgproc.MORPH_DILATE, kernel);
+        Imgproc.findContours(morbyte, contour, hierachy, Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_NONE);
+        recognizedText = "";
+        for(int i = 0; i < contour.size(); i++){
+            Rect rectant = Imgproc.boundingRect(contour.get(i));
+
+            if( rectant.area() < 200 || rectant.width < rectant.height){
+                Mat roi = new Mat(morbyte, rectant);
+                roi.setTo(zeros);
+                continue;
+            }
+
+            Point bottomRight = rectant.br();
+            Point topLeft = rectant.tl();
+            Imgproc.rectangle(mRgba, bottomRight, topLeft, CONTOUR_COLOR, 3);
+
+            /*
+            The following is using Google service. Here we need to implement our own algorithm
+             */
+            Mat subImage = mRgba.submat((int)topLeft.y, (int)bottomRight.y, (int)topLeft.x, (int)bottomRight.x);
+            Bitmap bitMap = Bitmap.createBitmap(subImage.cols(), subImage.rows(), Bitmap.Config.ARGB_8888);
+
+            Utils.matToBitmap(subImage, bitMap);
+            Frame frame = new Frame.Builder().setBitmap(bitMap).build();
+            SparseArray<TextBlock> items = textRecognizer.detect(frame);
+            for(int j = 0; j < items.size(); j++) {
+                TextBlock textBlock = items.valueAt(j);
+                if (textBlock != null && textBlock.getValue() != null) {
+                    Log.i("OcrDetectorProcessor", "Text detected! " + textBlock.getValue());
+                    recognizedText = recognizedText.concat(textBlock.getValue());
+                }
+            }
+        }
 
         return mRgba;
     }
