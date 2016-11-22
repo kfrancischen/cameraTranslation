@@ -31,16 +31,16 @@ public class DatabaseFile {
     }
 
     // TODO, data based needs to be implemented
-    /* this is the dictionary for the English words
+    /** this is the dictionary for the English words
        each line should have the format: all lower letter
        any input with upper case will finally be converted to lower case
-     */
+     **/
     private List<String> englishVocabulary = Arrays.asList("exit",
         "entrance",
         "stop");
-    /* this is the dictionary for the corresponding Chinese words
+    /** this is the dictionary for the corresponding Chinese words
        each line should have the Chinese translation for the corresponding lines of the englishVocabulary
-     */
+     **/
     private List<String> chineseVocabulary = Arrays.asList("出口",
             "入口",
             "停止");
