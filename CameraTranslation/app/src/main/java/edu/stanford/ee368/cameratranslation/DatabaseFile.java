@@ -15,14 +15,11 @@ import java.util.regex.Pattern;
 public class DatabaseFile {
     private  HashMap<String, String> vocabulary = new HashMap();
     public DatabaseFile(){
-        int k = 0;
         for(int i = 0; i < chineseVocabulary.size(); i++){
-            for(int j = 0; j < 3; j++ ) {
-                vocabulary.put(englishVocabulary.get(k), chineseVocabulary.get(i));
-                k += 1;
-            }
+                vocabulary.put(englishVocabulary.get(i), chineseVocabulary.get(i));
         }
     }
+
     public boolean hasThisWord(String word){
         return vocabulary.containsKey(word);
     }
@@ -35,11 +32,12 @@ public class DatabaseFile {
 
     // TODO, data based needs to be implemented
     /* this is the dictionary for the English words
-       each line should have the format: all lower letter, initial letter capitalized, all capital letter
+       each line should have the format: all lower letter
+       any input with upper case will finally be converted to lower case
      */
-    private List<String> englishVocabulary = Arrays.asList("exit", "Exit", "EXIT",
-        "entrance", "Entrance", "ENTRANCE",
-        "stop", "Stop", "STOP");
+    private List<String> englishVocabulary = Arrays.asList("exit",
+        "entrance",
+        "stop");
     /* this is the dictionary for the corresponding Chinese words
        each line should have the Chinese translation for the corresponding lines of the englishVocabulary
      */

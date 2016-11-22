@@ -179,7 +179,6 @@ public class CameraTranslation extends Activity implements CvCameraViewListener2
 
     /** add autofocus and autozoom **/
     public boolean onTouch(View view, MotionEvent event){
-        int action = event.getAction();
         if(event.getPointerCount() > 1){
             mOpenCVCameraView.zoomOnTouch(event);
         }
@@ -188,6 +187,9 @@ public class CameraTranslation extends Activity implements CvCameraViewListener2
             // touch to clear recognition results
             mGraphicOverLay.clear();
             recognizedText = "";
+        }
+        if(voiceTalker.isSpeaking()){
+            voiceTalker.stop();
         }
         return true;
     }
@@ -268,6 +270,9 @@ public class CameraTranslation extends Activity implements CvCameraViewListener2
 
             }
         }
+        /**
+         * the following is implemented using OpenCV feature detector and Google text recognition.
+         */
 
         return mRgba;
     }
