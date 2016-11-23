@@ -22,11 +22,13 @@ import org.opencv.core.Size;
 import org.opencv.android.CameraBridgeViewBase;
 import org.opencv.android.CameraBridgeViewBase.CvCameraViewListener2;
 import org.opencv.features2d.FeatureDetector;
+import org.opencv.imgcodecs.Imgcodecs;
 import org.opencv.objdetect.CascadeClassifier;
 import org.opencv.imgproc.Imgproc;
 
 
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.media.Image;
 import android.os.Bundle;
 import android.app.Activity;
@@ -59,6 +61,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.jar.Manifest;
 
 import com.google.android.gms.vision.text.TextBlock;
 import com.google.android.gms.vision.text.TextRecognizer;
@@ -109,6 +112,10 @@ public class CameraTranslation extends Activity implements CvCameraViewListener2
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         //mOpenCVCameraView = new TranslationCameraView(this, -1);
         //setContentView(mOpenCVCameraView);
+        int permissionCheck = ContextCompat.checkSelfPermission(this, android.Manifest.permission.CAMERA);
+        if(permissionCheck != PackageManager.PERMISSION_GRANTED){
+            ActivityCompat.requestPermissions(this, new String[]{android.Manifest.permission.CAMERA}, 0);
+        }
         setContentView(R.layout.camera_translation_view);
         /** initializing camera view **/
         mOpenCVCameraView = (TranslationCameraView) findViewById(R.id.camera_surface_view);
@@ -131,7 +138,7 @@ public class CameraTranslation extends Activity implements CvCameraViewListener2
                     recognizedText = "";
                     isSearchButtonPressed = true;
                     // this line is changed for block detection
-                    //isSearchButtonPressed = !isSearchButtonPressed;
+                    // isSearchButtonPressed = !isSearchButtonPressed;
                 }
                 else if(event.getAction() == MotionEvent.ACTION_UP){
                     // this line is changed for block detection
@@ -255,17 +262,26 @@ public class CameraTranslation extends Activity implements CvCameraViewListener2
     public Mat onCameraFrame(CvCameraViewFrame inputFrame){
         Log.i(TAG, "got frame");
         mRgba = inputFrame.rgba();
-        //mGray = inputFrame.gray();
+        mGray = inputFrame.gray();
         if(!isSearchButtonPressed){
             Log.i(TAG, "search button not pressed");
             return mRgba;
         }
         Log.i(TAG, "search button is pressed");
 
-        /**
-            the following is implemented using Google service
-        **/
-        /*
+        onGoogleServiceDirect(mRgba);
+        //onFeatureDetectorAndGoogleService(mRgba, mGray);
+
+        return mRgba;
+    }
+
+
+    //*******************************************************************//
+    /**
+     the following is implemented using Google service
+     **/
+
+    private void onGoogleServiceDirect(Mat mRgba){
         recognizedText = "";
         Bitmap bitMap = Bitmap.createBitmap(mRgba.cols(), mRgba.rows(), Bitmap.Config.ARGB_8888);
 
@@ -282,12 +298,14 @@ public class CameraTranslation extends Activity implements CvCameraViewListener2
 
             }
         }
-        */
-        /**
-         * the following is implemented using OpenCV feature detector
-         */
+    }
 
-        mGray = inputFrame.gray();
+    //*******************************************************************//
+    /**
+     * the following is implemented using OpenCV feature detector plus google service
+     */
+
+    private void onFeatureDetectorAndGoogleService(Mat mRgba, Mat mGray){
         Scalar CONTOUR_COLOR = new Scalar(255);
         MatOfKeyPoint matKeyPoint = new MatOfKeyPoint();
         List<KeyPoint> listOfKeyPoints;
@@ -322,7 +340,6 @@ public class CameraTranslation extends Activity implements CvCameraViewListener2
             }
 
         }
-
         Mat morbyte = new Mat();
         Mat hierachy = new Mat();
         Mat kernel = new Mat(1, 50, CvType.CV_8UC1, Scalar.all(255));
@@ -362,8 +379,22 @@ public class CameraTranslation extends Activity implements CvCameraViewListener2
                 }
             }
         }
+    }
+    //*******************************************************************//
+    /**
+     * the following is implemented using PCA algorithm for the whole image
+     */
 
-        return mRgba;
+    private void onImagePCA(Mat mRgba){
+
     }
 
+    //*******************************************************************//
+    /**
+     * the following is implemented using PCA algorithm for the letters
+     */
+
+    private void onLetterPCA(Mat mRgba){
+
+    }
 }
