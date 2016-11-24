@@ -86,7 +86,7 @@ public class CameraTranslation extends Activity implements CvCameraViewListener2
     private Mat mGray;
     private String recognizedText = "";
     private TextRecognizer textRecognizer;
-    private GraphicOverlay<OcrGraphic> mGraphicOverLay;
+    private GraphicOverlay<OcrGraphicPlain> mGraphicOverLay;
 
     private Mat PCAMat;
     private Mat topVectors;
@@ -127,7 +127,7 @@ public class CameraTranslation extends Activity implements CvCameraViewListener2
         mOpenCVCameraView.setCvCameraViewListener(this);
 
         /** initializing graphicOverLay **/
-        mGraphicOverLay = (GraphicOverlay<OcrGraphic>) findViewById(R.id.graphic_overlay);
+        mGraphicOverLay = (GraphicOverlay<OcrGraphicPlain>) findViewById(R.id.graphic_overlay);
 
         /** initializing search start button **/
         searchButton = (ImageButton) findViewById(R.id.search_button);
@@ -287,6 +287,7 @@ public class CameraTranslation extends Activity implements CvCameraViewListener2
      the following is implemented using Google service
      **/
 
+    /*
     private void onGoogleServiceDirect(Mat mRgba){
         recognizedText = "";
         Bitmap bitMap = Bitmap.createBitmap(mRgba.cols(), mRgba.rows(), Bitmap.Config.ARGB_8888);
@@ -305,7 +306,7 @@ public class CameraTranslation extends Activity implements CvCameraViewListener2
             }
         }
     }
-
+    */
     //*******************************************************************//
     /**
      * the following is implemented using OpenCV feature detector plus google service
@@ -450,6 +451,8 @@ public class CameraTranslation extends Activity implements CvCameraViewListener2
         }
         Log.i(TAG, "the detected word is " + database.getEnglishByIndex(maxIndex));
         recognizedText = database.getChineseByIndex(maxIndex);
+        OcrGraphicPlain ocrGraphicsPlain = new OcrGraphicPlain(mGraphicOverLay, recognizedText);
+        mGraphicOverLay.add(ocrGraphicsPlain);
     }
 
     //*******************************************************************//
