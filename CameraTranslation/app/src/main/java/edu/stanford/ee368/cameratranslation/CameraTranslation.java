@@ -459,5 +459,6 @@ public class CameraTranslation extends Activity implements CvCameraViewListener2
 
     private void onLetterPCA(Mat mRgba) throws IOException {
         onDatabasePCA();
+        // TODO, more to be implemented
     }
 }
