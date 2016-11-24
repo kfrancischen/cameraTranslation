@@ -449,7 +449,7 @@ public class CameraTranslation extends Activity implements CvCameraViewListener2
             }
         }
         Log.i(TAG, "the detected word is " + database.getEnglishByIndex(maxIndex));
-        recognizedText = database.getEnglishByIndex(maxIndex) + database.getChineseByIndex(maxIndex);
+        recognizedText = database.getChineseByIndex(maxIndex);
     }
 
     //*******************************************************************//
