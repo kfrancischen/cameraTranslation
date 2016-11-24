@@ -44,6 +44,7 @@ import android.os.Bundle;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.content.IntentFilter;
+import android.support.v4.content.res.ResourcesCompat;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
@@ -87,6 +88,9 @@ public class CameraTranslation extends Activity implements CvCameraViewListener2
     private TextRecognizer textRecognizer;
     private GraphicOverlay<OcrGraphic> mGraphicOverLay;
 
+    private Mat PCAMat;
+    private Mat topVectors;
+
     /** defining class for call back **/
     private BaseLoaderCallback mLoaderCallback = new BaseLoaderCallback(this) {
         @Override
@@ -106,7 +110,7 @@ public class CameraTranslation extends Activity implements CvCameraViewListener2
     };
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    protected void onCreate(Bundle savedInstanceState){
         Log.i(TAG, "called onCreate");
         super.onCreate(savedInstanceState);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
@@ -154,7 +158,8 @@ public class CameraTranslation extends Activity implements CvCameraViewListener2
             @Override
             public void onInit(int status){
                 if(status != TextToSpeech.ERROR){
-                    voiceTalker.setLanguage(Locale.US);
+                    //voiceTalker.setLanguage(Locale.US);
+                    voiceTalker.setLanguage(Locale.CHINESE);
                 }
             }
         });
@@ -164,7 +169,6 @@ public class CameraTranslation extends Activity implements CvCameraViewListener2
         voiceButton.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View view){
-                // TODO: here we can put a function for voicing
                 if(voiceTalker.isSpeaking()){
                     voiceTalker.stop();
                 }
@@ -192,7 +196,6 @@ public class CameraTranslation extends Activity implements CvCameraViewListener2
             }
 
         }
-
     }
 
     /** add autofocus and autozoom **/
@@ -251,6 +254,8 @@ public class CameraTranslation extends Activity implements CvCameraViewListener2
     public void onCameraViewStarted(int width, int height){
         mGray = new Mat();
         mRgba = new Mat();
+        PCAMat = new Mat();
+        topVectors = new Mat();
     }
 
     public void onCameraViewStopped(){
@@ -260,18 +265,19 @@ public class CameraTranslation extends Activity implements CvCameraViewListener2
 
     @Override
     public Mat onCameraFrame(CvCameraViewFrame inputFrame){
-        Log.i(TAG, "got frame");
+        //Log.i(TAG, "got frame");
         mRgba = inputFrame.rgba();
         mGray = inputFrame.gray();
         if(!isSearchButtonPressed){
-            Log.i(TAG, "search button not pressed");
+            //Log.i(TAG, "search button not pressed");
             return mRgba;
         }
         Log.i(TAG, "search button is pressed");
 
-        onGoogleServiceDirect(mRgba);
+        //onGoogleServiceDirect(mRgba);
         //onFeatureDetectorAndGoogleService(mRgba, mGray);
-
+        // this line uses PCA for the whole image
+        onImagePCA(mGray);
         return mRgba;
     }
 
@@ -385,8 +391,65 @@ public class CameraTranslation extends Activity implements CvCameraViewListener2
      * the following is implemented using PCA algorithm for the whole image
      */
 
-    private void onImagePCA(Mat mRgba){
+    private void onDatabasePCA() {
+        List<String> fileNames = database.getEnglishVocabulary();
+        Mat ensemble = new Mat();
+        for(int i = 0; i < fileNames.size(); i++){
+            int resourceId = getResources().getIdentifier(fileNames.get(i), "raw", getPackageName());
+            try {
+                Mat image = Utils.loadResource(this, resourceId, Imgcodecs.CV_LOAD_IMAGE_GRAYSCALE);
+                image.convertTo(image, CvType.CV_64FC1);
+                Imgproc.resize(image, image, new Size(480, 360));
+                //Core.normalize(image, image);
+                ensemble.push_back(image.reshape(0, 1));
+            }
+            catch(Exception ex){
+                Log.e(TAG, "database error " + ex.getMessage());
+                return;
+            }
 
+        }
+        ensemble = ensemble.t(); // size N * L
+        Mat SKMat = new Mat();
+        Core.gemm(ensemble.t(), ensemble, 1, new Mat(), 0, SKMat); // this computes image^T * image
+        Log.w(TAG, Integer.toString(SKMat.width()) + "\t" + Integer.toString(SKMat.height()));
+
+        Mat eigValues = new Mat();
+        Mat eigVectors = new Mat();
+        Core.eigen(SKMat, eigValues, eigVectors);
+        //topVectors = new Mat();
+        //PCAMat = new Mat();
+        Core.gemm(ensemble, eigVectors, 1, new Mat(), 0, topVectors);
+        for(int i = 0; i < topVectors.width(); i++){
+            Mat thisCol = topVectors.col(i);
+            Core.normalize(thisCol, thisCol);
+        }
+        topVectors = topVectors.t(); // size L * N
+        Core.gemm(topVectors, ensemble, 1, new Mat(), 0, PCAMat); // size L * L
+    }
+
+    private void onImagePCA(Mat mGray) {
+        onDatabasePCA();
+        mGray.convertTo(mGray, CvType.CV_64FC1);
+        Imgproc.resize(mGray, mGray, new Size(480, 360));
+        mGray = mGray.reshape(0, 1);
+        //Core.normalize(mGray, mGray);
+        Mat projection = new Mat();
+        Core.gemm(topVectors, mGray.t(), 1, new Mat(), 1, projection); // size L * 1
+        double maxSimilarity = 0;
+        int maxIndex = 0;
+
+        for(int i = 0; i < PCAMat.width(); i++){
+            double similarity = Math.abs(projection.dot(PCAMat.col(i)))
+                    / (Math.sqrt(projection.dot(projection)) * Math.sqrt(PCAMat.col(i).dot(PCAMat.col(i))));
+            if(similarity > maxSimilarity){
+                maxIndex = i;
+                maxSimilarity = similarity;
+                Log.i(TAG, "similarity" + Double.toString(similarity));
+            }
+        }
+        Log.i(TAG, "the detected word is " + database.getEnglishByIndex(maxIndex));
+        recognizedText = database.getChineseByIndex(maxIndex);
     }
 
     //*******************************************************************//
@@ -394,7 +457,7 @@ public class CameraTranslation extends Activity implements CvCameraViewListener2
      * the following is implemented using PCA algorithm for the letters
      */
 
-    private void onLetterPCA(Mat mRgba){
-
+    private void onLetterPCA(Mat mRgba) throws IOException {
+        onDatabasePCA();
     }
 }

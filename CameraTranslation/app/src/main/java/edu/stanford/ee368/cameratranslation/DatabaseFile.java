@@ -1,5 +1,9 @@
 package edu.stanford.ee368.cameratranslation;
 
+import android.content.Context;
+
+import org.opencv.core.Point;
+
 import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -30,6 +34,31 @@ public class DatabaseFile {
         return null;
     }
 
+    public List<String> getEnglishVocabulary(){
+        return englishVocabulary;
+    }
+
+    public List<String> getChineseVocabulary(){
+        return chineseVocabulary;
+    }
+
+    public String getEnglishByIndex(int index){
+        if(index < englishVocabulary.size()){
+            return englishVocabulary.get(index);
+        }
+        else{
+            return null;
+        }
+    }
+
+    public String getChineseByIndex(int index){
+        if(index < chineseVocabulary.size()){
+            return chineseVocabulary.get(index);
+        }
+        else{
+            return null;
+        }
+    }
     // TODO, data based needs to be implemented
     /** this is the dictionary for the English words
        each line should have the format: all lower letter
@@ -44,4 +73,5 @@ public class DatabaseFile {
     private List<String> chineseVocabulary = Arrays.asList("出口",
             "入口",
             "停止");
+
 }
