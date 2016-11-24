@@ -64,14 +64,36 @@ public class DatabaseFile {
        each line should have the format: all lower letter
        any input with upper case will finally be converted to lower case
      **/
-    private List<String> englishVocabulary = Arrays.asList("exit",
-        "entrance",
-        "stop");
+    private List<String> englishVocabulary = Arrays.asList(
+            "exit",
+            "entrance",
+            "stop",
+            "arrivals",
+            "departures",
+            "baggage",
+            "checkin",
+            "information",
+            "lostfound",
+            "moneyexchange",
+            "restroom",
+            "security",
+            "custom");
     /** this is the dictionary for the corresponding Chinese words
        each line should have the Chinese translation for the corresponding lines of the englishVocabulary
      **/
-    private List<String> chineseVocabulary = Arrays.asList("出口",
+    private List<String> chineseVocabulary = Arrays.asList(
+            "出口",
             "入口",
-            "停止");
+            "停止",
+            "到达层",
+            "出发层",
+            "行李",
+            "登记",
+            "信息咨询",
+            "失物招领",
+            "货币兑换",
+            "卫生间",
+            "安检",
+            "海关");
 
 }

@@ -443,6 +443,7 @@ public class CameraTranslation extends Activity implements CvCameraViewListener2
         for(int i = 0; i < PCAMat.width(); i++){
             double similarity = Math.abs(projection.dot(PCAMat.col(i)))
                     / (Math.sqrt(projection.dot(projection)) * Math.sqrt(PCAMat.col(i).dot(PCAMat.col(i))));
+            //double similarity = Math.abs(projection.dot(PCAMat.col(i)));
             if(similarity > maxSimilarity){
                 maxIndex = i;
                 maxSimilarity = similarity;
