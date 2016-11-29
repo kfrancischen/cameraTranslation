@@ -21,7 +21,10 @@ import org.opencv.core.Scalar;
 import org.opencv.core.Size;
 import org.opencv.android.CameraBridgeViewBase;
 import org.opencv.android.CameraBridgeViewBase.CvCameraViewListener2;
+import org.opencv.features2d.DescriptorExtractor;
+import org.opencv.features2d.DescriptorMatcher;
 import org.opencv.features2d.FeatureDetector;
+import org.opencv.features2d.Features2d;
 import org.opencv.imgcodecs.Imgcodecs;
 import org.opencv.objdetect.CascadeClassifier;
 import org.opencv.imgproc.Imgproc;
@@ -72,7 +75,7 @@ public class CameraTranslation extends Activity implements CvCameraViewListener2
 
     /** defining class private variables**/
     // initialize the database
-    private DatabaseFile database = new DatabaseFile();
+    private DatabaseFile database = new DatabaseFile(this);
 
     // initialize UI activities
     private static final String TAG = "translation::Activity";
@@ -90,6 +93,7 @@ public class CameraTranslation extends Activity implements CvCameraViewListener2
 
     private Mat PCAMat;
     private Mat topVectors;
+    private List<MatOfKeyPoint> databaseDescriptor;
 
     /** defining class for call back **/
     private BaseLoaderCallback mLoaderCallback = new BaseLoaderCallback(this) {
@@ -254,8 +258,21 @@ public class CameraTranslation extends Activity implements CvCameraViewListener2
     public void onCameraViewStarted(int width, int height){
         mGray = new Mat();
         mRgba = new Mat();
+
+        /*
+        These few lines are for the PCA algorithm
+         */
         PCAMat = new Mat();
         topVectors = new Mat();
+        database.computePCAMats(PCAMat, topVectors);
+        topVectors = topVectors.t(); // this line is mysterious. But without this line the size of the topVector is wrong
+        //Log.e("this", Integer.toString(topVectors.width()) + Integer.toString(topVectors.height()));
+
+        /*
+        These few lines are for the SURF detector algorithm
+         */
+        databaseDescriptor = new ArrayList<>();
+        database.computeDescriptor(databaseDescriptor);
     }
 
     public void onCameraViewStopped(){
@@ -391,7 +408,7 @@ public class CameraTranslation extends Activity implements CvCameraViewListener2
     /**
      * the following is implemented using PCA algorithm for the whole image
      */
-
+    /*
     private void onDatabasePCA() {
         List<String> fileNames = database.getEnglishVocabulary();
         Mat ensemble = new Mat();
@@ -428,11 +445,11 @@ public class CameraTranslation extends Activity implements CvCameraViewListener2
         topVectors = topVectors.t(); // size L * N
         Core.gemm(topVectors, ensemble, 1, new Mat(), 0, PCAMat); // size L * L
     }
-
+    */
     private void onImagePCA(Mat mGray) {
-        onDatabasePCA();
+        //onDatabasePCA();
         mGray.convertTo(mGray, CvType.CV_64FC1);
-        Imgproc.resize(mGray, mGray, new Size(480, 360));
+        Imgproc.resize(mGray, mGray, new Size(480, 270));
         mGray = mGray.reshape(0, 1);
         //Core.normalize(mGray, mGray);
         Mat projection = new Mat();
@@ -462,7 +479,33 @@ public class CameraTranslation extends Activity implements CvCameraViewListener2
      */
 
     private void onLetterPCA(Mat mRgba) throws IOException {
-        onDatabasePCA();
+        //onDatabasePCA();
         // TODO, more to be implemented
+    }
+
+    //*******************************************************************//
+    /**
+     * the following is implemented using SIFT detector
+     * TODO
+     */
+    private void onSIFTDetector(Mat mRgba){
+        FeatureDetector detector = FeatureDetector.create(FeatureDetector.SURF);
+        DescriptorExtractor descriptorExtractor = DescriptorExtractor.create(DescriptorExtractor.SURF);
+        DescriptorMatcher descriptorMatcher =DescriptorMatcher.create(DescriptorMatcher.FLANNBASED);
+        MatOfKeyPoint matKeyPoint = new MatOfKeyPoint();
+        List<KeyPoint> listOfKeyPoints;
+        KeyPoint keyPoint;
+
+        // detect key points in the input image
+        MatOfKeyPoint sceneKeyPoints = new MatOfKeyPoint();
+        MatOfKeyPoint sceneDescriptors = new MatOfKeyPoint();
+        detector.detect(mRgba, sceneKeyPoints);
+        descriptorExtractor.compute(mRgba, sceneKeyPoints, sceneDescriptors);
+
+        // match with input images
+        List<String> fileNames = database.getEnglishVocabulary();
+        for(int i = 0; i < fileNames.size(); i++){
+
+        }
     }
 }
