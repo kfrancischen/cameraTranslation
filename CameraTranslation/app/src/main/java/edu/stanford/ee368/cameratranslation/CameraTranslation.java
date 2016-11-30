@@ -16,63 +16,40 @@ import org.opencv.core.Mat;
 import org.opencv.core.MatOfDMatch;
 import org.opencv.core.MatOfKeyPoint;
 import org.opencv.core.MatOfPoint;
-import org.opencv.core.MatOfRect;
 import org.opencv.core.Point;
 import org.opencv.core.Rect;
 import org.opencv.core.Scalar;
 import org.opencv.core.Size;
-import org.opencv.android.CameraBridgeViewBase;
 import org.opencv.android.CameraBridgeViewBase.CvCameraViewListener2;
 import org.opencv.features2d.DescriptorExtractor;
 import org.opencv.features2d.DescriptorMatcher;
 import org.opencv.features2d.FeatureDetector;
-import org.opencv.features2d.Features2d;
-import org.opencv.imgcodecs.Imgcodecs;
-import org.opencv.objdetect.CascadeClassifier;
 import org.opencv.imgproc.Imgproc;
 
 
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.media.Image;
 import android.os.Bundle;
 import android.app.Activity;
 import android.content.Context;
 import android.graphics.Bitmap;
-import android.graphics.Canvas;
-import android.graphics.Color;
-import android.graphics.Paint;
-import android.graphics.RectF;
-import android.hardware.Camera;
-import android.hardware.Camera.PreviewCallback;
-import android.os.Bundle;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.content.IntentFilter;
-import android.support.v4.content.res.ResourcesCompat;
 import android.util.Log;
-import android.view.ContextMenu;
-import android.view.Menu;
 import android.view.MotionEvent;
-import android.view.SurfaceHolder;
-import android.view.SurfaceView;
 import android.view.View;
-import android.view.ViewGroup;
-import android.view.MenuItem;
 import android.view.WindowManager;
 import android.widget.ImageButton;
 import android.speech.tts.TextToSpeech;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
-import android.widget.Toast;
 import android.util.SparseArray;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
-import java.util.jar.Manifest;
 
 import com.google.android.gms.vision.text.TextBlock;
 import com.google.android.gms.vision.text.TextRecognizer;
@@ -158,31 +135,26 @@ public class CameraTranslation extends Activity implements CvCameraViewListener2
                 switch (text){
                     case "Algo1":{
                         algoType = ALGO_1;
-                        recognizedText = "";
-                        mGraphicOverLay.clear();
                         break;
                     }
                     case "Algo2":{
                         algoType = ALGO_2;
-                        recognizedText = "";
-                        mGraphicOverLay.clear();
                         break;
                     }
                     case "Algo3":{
                         algoType = ALGO_3;
-                        recognizedText = "";
-                        mGraphicOverLay.clear();
                         break;
                     }
                     case "Algo4":{
                         algoType = ALGO_4;
-                        recognizedText = "";
-                        mGraphicOverLay.clear();
                         break;
                     }
                     default:
                         break;
                 }
+
+                recognizedText = "";
+                mGraphicOverLay.clear();
             }
         });
 
@@ -232,7 +204,7 @@ public class CameraTranslation extends Activity implements CvCameraViewListener2
                     voiceTalker.stop();
                 }
                 if(recognizedText.length() != 0) {
-                    Log.i(TAG, "onClick: text to speech successful");
+                    Log.i(TAG, "onClick: text to speech successful: " + recognizedText);
                     voiceTalker.speak(recognizedText, TextToSpeech.QUEUE_FLUSH, null, "translation");
                 }
                 else{
@@ -388,8 +360,6 @@ public class CameraTranslation extends Activity implements CvCameraViewListener2
     /**
      the following is implemented using Google service
      **/
-
-
     private void onGoogleServiceDirect(Mat mRgba){
         recognizedText = "";
         Bitmap bitMap = Bitmap.createBitmap(mRgba.cols(), mRgba.rows(), Bitmap.Config.ARGB_8888);
@@ -400,11 +370,19 @@ public class CameraTranslation extends Activity implements CvCameraViewListener2
         for(int i = 0; i < items.size(); i++) {
             TextBlock textBlock = items.valueAt(i);
             if (textBlock != null && textBlock.getValue() != null) {
-                Log.i("OcrDetectorProcessor", "Text detected! " + textBlock.getValue());
-                recognizedText = recognizedText.concat(textBlock.getValue());
-                OcrGraphicPlain graphic = new OcrGraphicPlain(mGraphicOverLay, textBlock.getValue());
-                mGraphicOverLay.add(graphic);
-
+                String textString = textBlock.getValue();
+                textString = textString.replaceAll("\\W", " ");
+                String[] parts = textString.split("\\s+");
+                for(String text : parts){
+                    Log.i(TAG, text);
+                    if(database.hasThisWord(text)){
+                        Log.i("OcrDetectorProcessor", "Text detected! " + text);
+                        recognizedText = database.getChineseByEnglish(text);
+                        OcrGraphicPlain ocrGraphicsPlain = new OcrGraphicPlain(mGraphicOverLay, recognizedText);
+                        mGraphicOverLay.add(ocrGraphicsPlain);
+                        return;
+                    }
+                }
             }
         }
     }
@@ -469,7 +447,7 @@ public class CameraTranslation extends Activity implements CvCameraViewListener2
 
             Point bottomRight = rectant.br();
             Point topLeft = rectant.tl();
-            Imgproc.rectangle(mRgba, bottomRight, topLeft, CONTOUR_COLOR, 3);
+            //Imgproc.rectangle(mRgba, bottomRight, topLeft, CONTOUR_COLOR, 3);
 
             /*
             The following is using Google service. Here we need to implement our own algorithm
@@ -483,54 +461,28 @@ public class CameraTranslation extends Activity implements CvCameraViewListener2
             for(int j = 0; j < items.size(); j++) {
                 TextBlock textBlock = items.valueAt(j);
                 if (textBlock != null && textBlock.getValue() != null) {
-                    Log.i("OcrDetectorProcessor", "Text detected! " + textBlock.getValue());
-                    recognizedText = recognizedText.concat(textBlock.getValue());
+                    String textString = textBlock.getValue();
+                    textString = textString.replaceAll("\\W", " ");
+                    String[] parts = textString.split("\\s+");
+                    for(String text : parts){
+                        if(database.hasThisWord(text)){
+                            Log.i("OcrDetectorProcessor", "Text detected! " + text);
+                            recognizedText = database.getChineseByEnglish(text);
+                            OcrGraphicPlain ocrGraphicsPlain = new OcrGraphicPlain(mGraphicOverLay, recognizedText);
+                            mGraphicOverLay.add(ocrGraphicsPlain);
+                            return;
+                        }
+                    }
                 }
             }
         }
     }
+
+
     //*******************************************************************//
     /**
      * the following is implemented using PCA algorithm for the whole image
      */
-    /*
-    private void onDatabasePCA() {
-        List<String> fileNames = database.getEnglishVocabulary();
-        Mat ensemble = new Mat();
-        for(int i = 0; i < fileNames.size(); i++){
-            int resourceId = getResources().getIdentifier(fileNames.get(i), "raw", getPackageName());
-            try {
-                Mat image = Utils.loadResource(this, resourceId, Imgcodecs.CV_LOAD_IMAGE_GRAYSCALE);
-                image.convertTo(image, CvType.CV_64FC1);
-                Imgproc.resize(image, image, new Size(480, 360));
-                //Core.normalize(image, image);
-                ensemble.push_back(image.reshape(0, 1));
-            }
-            catch(Exception ex){
-                Log.e(TAG, "database error " + ex.getMessage());
-                return;
-            }
-
-        }
-        ensemble = ensemble.t(); // size N * L
-        Mat SKMat = new Mat();
-        Core.gemm(ensemble.t(), ensemble, 1, new Mat(), 0, SKMat); // this computes image^T * image
-        Log.w(TAG, Integer.toString(SKMat.width()) + "\t" + Integer.toString(SKMat.height()));
-
-        Mat eigValues = new Mat();
-        Mat eigVectors = new Mat();
-        Core.eigen(SKMat, eigValues, eigVectors);
-        //topVectors = new Mat();
-        //PCAMat = new Mat();
-        Core.gemm(ensemble, eigVectors, 1, new Mat(), 0, topVectors);
-        for(int i = 0; i < topVectors.width(); i++){
-            Mat thisCol = topVectors.col(i);
-            Core.normalize(thisCol, thisCol);
-        }
-        topVectors = topVectors.t(); // size L * N
-        Core.gemm(topVectors, ensemble, 1, new Mat(), 0, PCAMat); // size L * L
-    }
-    */
     private void onImagePCA(Mat mGray) {
         //onDatabasePCA();
         mGray.convertTo(mGray, CvType.CV_64FC1);
