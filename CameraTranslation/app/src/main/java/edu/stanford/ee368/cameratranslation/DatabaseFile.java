@@ -10,6 +10,9 @@ import org.opencv.core.Mat;
 import org.opencv.core.MatOfKeyPoint;
 import org.opencv.core.Point;
 import org.opencv.core.Size;
+import org.opencv.features2d.DescriptorExtractor;
+import org.opencv.features2d.DescriptorMatcher;
+import org.opencv.features2d.FeatureDetector;
 import org.opencv.imgcodecs.Imgcodecs;
 import org.opencv.imgproc.Imgproc;
 
@@ -100,8 +103,23 @@ public class DatabaseFile {
         Core.gemm(topVectors, ensemble, 1, new Mat(), 0, PCAMat); // size L * L
     }
 
-    public void computeDescriptor(List<MatOfKeyPoint> databaseDescriptor){
-
+    public void computeDescriptor(List<Mat> databaseDescriptor){
+        FeatureDetector detector = FeatureDetector.create(FeatureDetector.FAST);
+        DescriptorExtractor descriptorExtractor = DescriptorExtractor.create(DescriptorExtractor.ORB);
+        for(int i = 0; i < englishVocabulary.size(); i++){
+            int resourceId = context.getResources().getIdentifier(englishVocabulary.get(i), "raw", context.getPackageName());
+            try {
+                Mat image = Utils.loadResource(this.context, resourceId, Imgcodecs.CV_LOAD_IMAGE_COLOR);
+                MatOfKeyPoint objectKeyPoints = new MatOfKeyPoint();
+                Mat objectDescriptor = new Mat();
+                detector.detect(image, objectKeyPoints);
+                descriptorExtractor.compute(image, objectKeyPoints, objectDescriptor);
+                databaseDescriptor.add(objectDescriptor);
+            }
+            catch(Exception ex){
+                return;
+            }
+        }
     }
 
     // TODO, data based needs to be implemented

@@ -10,8 +10,10 @@ import org.opencv.android.OpenCVLoader;
 import org.opencv.android.Utils;
 import org.opencv.core.Core;
 import org.opencv.core.CvType;
+import org.opencv.core.DMatch;
 import org.opencv.core.KeyPoint;
 import org.opencv.core.Mat;
+import org.opencv.core.MatOfDMatch;
 import org.opencv.core.MatOfKeyPoint;
 import org.opencv.core.MatOfPoint;
 import org.opencv.core.MatOfRect;
@@ -63,6 +65,7 @@ import android.util.SparseArray;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.jar.Manifest;
@@ -93,7 +96,7 @@ public class CameraTranslation extends Activity implements CvCameraViewListener2
 
     private Mat PCAMat;
     private Mat topVectors;
-    private List<MatOfKeyPoint> databaseDescriptor;
+    private List<Mat> databaseDescriptor;
 
     /** defining class for call back **/
     private BaseLoaderCallback mLoaderCallback = new BaseLoaderCallback(this) {
@@ -291,10 +294,22 @@ public class CameraTranslation extends Activity implements CvCameraViewListener2
         }
         Log.i(TAG, "search button is pressed");
 
+        /*
+        algorithm 1: directly using Google service
+         */
         //onGoogleServiceDirect(mRgba);
+        /*
+        algorithm 2: combining MSER detector with Google service
+         */
         //onFeatureDetectorAndGoogleService(mRgba, mGray);
-        // this line uses PCA for the whole image
-        onImagePCA(mGray);
+        /*
+        algorithm 3: using PCA
+         */
+        //onImagePCA(mGray);
+        /*
+        algorithm 4: using FAST feature detector
+         */
+        onFASTDetector(mRgba);
         return mRgba;
     }
 
@@ -485,27 +500,48 @@ public class CameraTranslation extends Activity implements CvCameraViewListener2
 
     //*******************************************************************//
     /**
-     * the following is implemented using SIFT detector
+     * the following is implemented using FAST detector
      * TODO
      */
-    private void onSIFTDetector(Mat mRgba){
-        FeatureDetector detector = FeatureDetector.create(FeatureDetector.SURF);
-        DescriptorExtractor descriptorExtractor = DescriptorExtractor.create(DescriptorExtractor.SURF);
-        DescriptorMatcher descriptorMatcher =DescriptorMatcher.create(DescriptorMatcher.FLANNBASED);
-        MatOfKeyPoint matKeyPoint = new MatOfKeyPoint();
-        List<KeyPoint> listOfKeyPoints;
-        KeyPoint keyPoint;
+    private void onFASTDetector(Mat mRgba){
+        FeatureDetector detector = FeatureDetector.create(FeatureDetector.FAST);
+        DescriptorExtractor descriptorExtractor = DescriptorExtractor.create(DescriptorExtractor.ORB);
+        DescriptorMatcher descriptorMatcher = DescriptorMatcher.create(DescriptorMatcher.BRUTEFORCE);
 
         // detect key points in the input image
         MatOfKeyPoint sceneKeyPoints = new MatOfKeyPoint();
-        MatOfKeyPoint sceneDescriptors = new MatOfKeyPoint();
+        Mat sceneDescriptor = new Mat();
         detector.detect(mRgba, sceneKeyPoints);
-        descriptorExtractor.compute(mRgba, sceneKeyPoints, sceneDescriptors);
+        descriptorExtractor.compute(mRgba, sceneKeyPoints, sceneDescriptor);
 
         // match with input images
         List<String> fileNames = database.getEnglishVocabulary();
+        int maxMatch = 0;
+        int maxIndex = 0;
         for(int i = 0; i < fileNames.size(); i++){
-
+            List<MatOfDMatch> matches = new LinkedList<>();
+            Mat objectDescriptor = databaseDescriptor.get(i);
+            descriptorMatcher.knnMatch(objectDescriptor, sceneDescriptor, matches, 2);
+            double knnRatio = 0.7;
+            int thisMatch = 0;
+            for(int j = 0; j < matches.size(); j++){
+                MatOfDMatch mathOfDMatch = matches.get(j);
+                DMatch[] dmatchArray = mathOfDMatch.toArray();
+                DMatch m1 = dmatchArray[0];
+                DMatch m2 = dmatchArray[1];
+                if(m1.distance <= m2.distance * knnRatio){
+                    thisMatch += 1;
+                }
+            }
+            if(thisMatch > maxMatch){
+                maxMatch = thisMatch;
+                maxIndex = i;
+            }
+            Log.i(TAG, "number of match is " + Integer.toString(maxMatch));
         }
+        Log.i(TAG, "the detected word is " + database.getEnglishByIndex(maxIndex));
+        recognizedText = database.getChineseByIndex(maxIndex);
+        OcrGraphicPlain ocrGraphicsPlain = new OcrGraphicPlain(mGraphicOverLay, recognizedText);
+        mGraphicOverLay.add(ocrGraphicsPlain);
     }
 }
