@@ -560,18 +560,7 @@ public class CameraTranslation extends Activity implements CvCameraViewListener2
 
     //*******************************************************************//
     /**
-     * the following is implemented using PCA algorithm for the letters
-     */
-
-    private void onLetterPCA(Mat mRgba) throws IOException {
-        //onDatabasePCA();
-        // TODO, more to be implemented
-    }
-
-    //*******************************************************************//
-    /**
      * the following is implemented using FAST detector
-     * TODO
      */
     private void onFASTDetector(Mat mGray){
         Imgproc.resize(mGray, mGray, new Size(800, 450));
