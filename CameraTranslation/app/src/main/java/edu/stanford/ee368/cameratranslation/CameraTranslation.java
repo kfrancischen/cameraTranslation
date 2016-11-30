@@ -309,7 +309,7 @@ public class CameraTranslation extends Activity implements CvCameraViewListener2
         /*
         algorithm 4: using FAST feature detector
          */
-        onFASTDetector(mRgba);
+        onFASTDetector(mGray);
         return mRgba;
     }
 
@@ -503,16 +503,16 @@ public class CameraTranslation extends Activity implements CvCameraViewListener2
      * the following is implemented using FAST detector
      * TODO
      */
-    private void onFASTDetector(Mat mRgba){
+    private void onFASTDetector(Mat mGray){
+        Imgproc.resize(mGray, mGray, new Size(800, 450));
         FeatureDetector detector = FeatureDetector.create(FeatureDetector.FAST);
         DescriptorExtractor descriptorExtractor = DescriptorExtractor.create(DescriptorExtractor.ORB);
-        DescriptorMatcher descriptorMatcher = DescriptorMatcher.create(DescriptorMatcher.BRUTEFORCE);
 
         // detect key points in the input image
         MatOfKeyPoint sceneKeyPoints = new MatOfKeyPoint();
         Mat sceneDescriptor = new Mat();
-        detector.detect(mRgba, sceneKeyPoints);
-        descriptorExtractor.compute(mRgba, sceneKeyPoints, sceneDescriptor);
+        detector.detect(mGray, sceneKeyPoints);
+        descriptorExtractor.compute(mGray, sceneKeyPoints, sceneDescriptor);
 
         // match with input images
         List<String> fileNames = database.getEnglishVocabulary();
@@ -521,6 +521,7 @@ public class CameraTranslation extends Activity implements CvCameraViewListener2
         for(int i = 0; i < fileNames.size(); i++){
             List<MatOfDMatch> matches = new LinkedList<>();
             Mat objectDescriptor = databaseDescriptor.get(i);
+            DescriptorMatcher descriptorMatcher = DescriptorMatcher.create(DescriptorMatcher.BRUTEFORCE);
             descriptorMatcher.knnMatch(objectDescriptor, sceneDescriptor, matches, 2);
             double knnRatio = 0.7;
             int thisMatch = 0;

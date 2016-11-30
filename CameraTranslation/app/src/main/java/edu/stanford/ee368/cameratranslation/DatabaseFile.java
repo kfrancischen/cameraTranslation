@@ -104,12 +104,13 @@ public class DatabaseFile {
     }
 
     public void computeDescriptor(List<Mat> databaseDescriptor){
-        FeatureDetector detector = FeatureDetector.create(FeatureDetector.FAST);
-        DescriptorExtractor descriptorExtractor = DescriptorExtractor.create(DescriptorExtractor.ORB);
         for(int i = 0; i < englishVocabulary.size(); i++){
+            FeatureDetector detector = FeatureDetector.create(FeatureDetector.FAST);
+            DescriptorExtractor descriptorExtractor = DescriptorExtractor.create(DescriptorExtractor.ORB);
             int resourceId = context.getResources().getIdentifier(englishVocabulary.get(i), "raw", context.getPackageName());
             try {
-                Mat image = Utils.loadResource(this.context, resourceId, Imgcodecs.CV_LOAD_IMAGE_COLOR);
+                Mat image = Utils.loadResource(this.context, resourceId, Imgcodecs.CV_LOAD_IMAGE_GRAYSCALE);
+                Imgproc.resize(image, image, new Size(800, 450));
                 MatOfKeyPoint objectKeyPoints = new MatOfKeyPoint();
                 Mat objectDescriptor = new Mat();
                 detector.detect(image, objectKeyPoints);
