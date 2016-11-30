@@ -63,6 +63,7 @@ import android.view.WindowManager;
 import android.widget.ImageButton;
 import android.speech.tts.TextToSpeech;
 import android.widget.RadioButton;
+import android.widget.RadioGroup;
 import android.widget.Toast;
 import android.util.SparseArray;
 
@@ -101,10 +102,7 @@ public class CameraTranslation extends Activity implements CvCameraViewListener2
     private Mat topVectors;
     private List<Mat> databaseDescriptor;
 
-    private RadioButton radioButton_1;
-    private RadioButton radioButton_2;
-    private RadioButton radioButton_3;
-    private RadioButton radioButton_4;
+    private RadioGroup radioGroup;
     private static final int ALGO_1 = 0;
     private static final int ALGO_2 = 1;
     private static final int ALGO_3 = 2;
@@ -150,6 +148,45 @@ public class CameraTranslation extends Activity implements CvCameraViewListener2
         /** initializing graphicOverLay **/
         mGraphicOverLay = (GraphicOverlay<OcrGraphicPlain>) findViewById(R.id.graphic_overlay);
 
+        /** initializing radio buttons **/
+        radioGroup = (RadioGroup) findViewById(R.id.radioGroup);
+        radioGroup.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(RadioGroup group, int checkedId) {
+                RadioButton radioButton = (RadioButton) findViewById(checkedId);
+                String text = radioButton.getText().toString();
+                switch (text){
+                    case "Algo1":{
+                        algoType = ALGO_1;
+                        recognizedText = "";
+                        mGraphicOverLay.clear();
+                        break;
+                    }
+                    case "Algo2":{
+                        algoType = ALGO_2;
+                        recognizedText = "";
+                        mGraphicOverLay.clear();
+                        break;
+                    }
+                    case "Algo3":{
+                        algoType = ALGO_3;
+                        recognizedText = "";
+                        mGraphicOverLay.clear();
+                        break;
+                    }
+                    case "Algo4":{
+                        algoType = ALGO_4;
+                        recognizedText = "";
+                        mGraphicOverLay.clear();
+                        break;
+                    }
+                    default:
+                        break;
+                }
+            }
+        });
+
+
         /** initializing search start button **/
         searchButton = (ImageButton) findViewById(R.id.search_button);
         searchButton.setOnTouchListener(new View.OnTouchListener(){
@@ -162,6 +199,7 @@ public class CameraTranslation extends Activity implements CvCameraViewListener2
                     mGraphicOverLay.clear();
                     recognizedText = "";
                     isSearchButtonPressed = true;
+
                     // this line is changed for block detection
                     // isSearchButtonPressed = !isSearchButtonPressed;
                 }
@@ -218,11 +256,7 @@ public class CameraTranslation extends Activity implements CvCameraViewListener2
 
         }
 
-        /** initializing radio buttons **/
-        radioButton_1 = (RadioButton) findViewById(R.id.radioButton1);
-        radioButton_2 = (RadioButton) findViewById(R.id.radioButton2);
-        radioButton_3 = (RadioButton) findViewById(R.id.radioButton3);
-        radioButton_4 = (RadioButton) findViewById(R.id.radioButton4);
+
     }
 
     /** add autofocus and autozoom **/
@@ -313,23 +347,39 @@ public class CameraTranslation extends Activity implements CvCameraViewListener2
             return mRgba;
         }
         Log.i(TAG, "search button is pressed");
+        switch (algoType){
+            /*
+                algorithm 1: directly using Google service
+            */
+            case ALGO_1:{
+                onGoogleServiceDirect(mRgba);
+                break;
+            }
+            /*
+                algorithm 2: combining MSER detector with Google service
+            */
+            case ALGO_2:{
+                onFeatureDetectorAndGoogleService(mRgba, mGray);
+                break;
+            }
+            /*
+                algorithm 3: using PCA
+            */
+            case ALGO_3: {
+                onImagePCA(mGray);
+                break;
+            }
+            /*
+                algorithm 4: using FAST feature detector
+            */
+            case ALGO_4:{
+                onFASTDetector(mGray);
+                break;
+            }
+            default:
+                break;
+        }
 
-        /*
-        algorithm 1: directly using Google service
-         */
-        //onGoogleServiceDirect(mRgba);
-        /*
-        algorithm 2: combining MSER detector with Google service
-         */
-        //onFeatureDetectorAndGoogleService(mRgba, mGray);
-        /*
-        algorithm 3: using PCA
-         */
-        //onImagePCA(mGray);
-        /*
-        algorithm 4: using FAST feature detector
-         */
-        onFASTDetector(mGray);
         return mRgba;
     }
 
@@ -339,7 +389,7 @@ public class CameraTranslation extends Activity implements CvCameraViewListener2
      the following is implemented using Google service
      **/
 
-    /*
+
     private void onGoogleServiceDirect(Mat mRgba){
         recognizedText = "";
         Bitmap bitMap = Bitmap.createBitmap(mRgba.cols(), mRgba.rows(), Bitmap.Config.ARGB_8888);
@@ -352,13 +402,13 @@ public class CameraTranslation extends Activity implements CvCameraViewListener2
             if (textBlock != null && textBlock.getValue() != null) {
                 Log.i("OcrDetectorProcessor", "Text detected! " + textBlock.getValue());
                 recognizedText = recognizedText.concat(textBlock.getValue());
-                OcrGraphic graphic = new OcrGraphic(mGraphicOverLay, items.valueAt(i));
+                OcrGraphicPlain graphic = new OcrGraphicPlain(mGraphicOverLay, textBlock.getValue());
                 mGraphicOverLay.add(graphic);
 
             }
         }
     }
-    */
+
     //*******************************************************************//
     /**
      * the following is implemented using OpenCV feature detector plus google service
