@@ -155,6 +155,9 @@ public class CameraTranslation extends Activity implements CvCameraViewListener2
 
                 recognizedText = "";
                 mGraphicOverLay.clear();
+                if(voiceTalker.isSpeaking()){
+                    voiceTalker.stop();
+                }
             }
         });
 
