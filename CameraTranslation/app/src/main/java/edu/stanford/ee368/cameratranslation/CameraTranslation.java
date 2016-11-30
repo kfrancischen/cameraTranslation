@@ -51,15 +51,18 @@ import android.support.v4.content.ContextCompat;
 import android.content.IntentFilter;
 import android.support.v4.content.res.ResourcesCompat;
 import android.util.Log;
+import android.view.ContextMenu;
+import android.view.Menu;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.Window;
+import android.view.MenuItem;
 import android.view.WindowManager;
 import android.widget.ImageButton;
 import android.speech.tts.TextToSpeech;
+import android.widget.RadioButton;
 import android.widget.Toast;
 import android.util.SparseArray;
 
@@ -97,6 +100,17 @@ public class CameraTranslation extends Activity implements CvCameraViewListener2
     private Mat PCAMat;
     private Mat topVectors;
     private List<Mat> databaseDescriptor;
+
+    private RadioButton radioButton_1;
+    private RadioButton radioButton_2;
+    private RadioButton radioButton_3;
+    private RadioButton radioButton_4;
+    private static final int ALGO_1 = 0;
+    private static final int ALGO_2 = 1;
+    private static final int ALGO_3 = 2;
+    private static final int ALGO_4 = 3;
+
+    private int algoType = ALGO_1;
 
     /** defining class for call back **/
     private BaseLoaderCallback mLoaderCallback = new BaseLoaderCallback(this) {
@@ -203,6 +217,12 @@ public class CameraTranslation extends Activity implements CvCameraViewListener2
             }
 
         }
+
+        /** initializing radio buttons **/
+        radioButton_1 = (RadioButton) findViewById(R.id.radioButton1);
+        radioButton_2 = (RadioButton) findViewById(R.id.radioButton2);
+        radioButton_3 = (RadioButton) findViewById(R.id.radioButton3);
+        radioButton_4 = (RadioButton) findViewById(R.id.radioButton4);
     }
 
     /** add autofocus and autozoom **/

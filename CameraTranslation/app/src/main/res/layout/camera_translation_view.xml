@@ -42,4 +42,58 @@
         android:layout_alignParentStart="true"
         android:layout_alignBottom="@+id/voice_button" />
 
+    <RadioButton
+        android:text="Algo2"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="36dp"
+        android:id="@+id/radioButton2"
+        android:textColor="@android:color/black"
+        android:textAppearance="@style/TextAppearance.AppCompat.Button"
+        android:layout_alignBaseline="@+id/radioButton1"
+        android:layout_alignBottom="@+id/radioButton1"
+        android:layout_toEndOf="@+id/radioButton1"
+        android:textSize="18sp" />
+
+    <RadioButton
+        android:text="Algo3"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="36dp"
+        android:id="@+id/radioButton3"
+        android:textColor="@android:color/black"
+        android:textAppearance="@style/TextAppearance.AppCompat.Button"
+        android:layout_alignBaseline="@+id/radioButton2"
+        android:layout_alignBottom="@+id/radioButton2"
+        android:layout_toEndOf="@+id/radioButton2"
+        android:textSize="18sp" />
+
+    <RadioButton
+        android:text="Algo4"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/radioButton4"
+        android:layout_marginStart="36dp"
+        android:textColor="@android:color/black"
+        android:textAppearance="@style/TextAppearance.AppCompat.Button"
+        android:layout_alignBaseline="@+id/radioButton3"
+        android:layout_alignBottom="@+id/radioButton3"
+        android:layout_toEndOf="@+id/radioButton3"
+        android:textSize="18sp" />
+
+    <RadioButton
+        android:text="Algo1"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/radioButton1"
+        android:scaleType="fitCenter"
+        android:adjustViewBounds="true"
+        android:layout_marginStart="38dp"
+        android:textColor="@android:color/black"
+        android:textAppearance="@style/TextAppearance.AppCompat.Button"
+        android:textSize="18sp"
+        android:layout_alignBottom="@+id/search_button"
+        android:layout_toEndOf="@+id/search_button" />
+
+
 </RelativeLayout>
