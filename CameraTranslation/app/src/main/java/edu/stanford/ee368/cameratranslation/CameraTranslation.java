@@ -374,7 +374,7 @@ public class CameraTranslation extends Activity implements CvCameraViewListener2
             TextBlock textBlock = items.valueAt(i);
             if (textBlock != null && textBlock.getValue() != null) {
                 String textString = textBlock.getValue();
-                textString = textString.replaceAll("\\W", " ");
+                textString = textString.replaceAll("\\W", " ").toLowerCase();
                 String[] parts = textString.split("\\s+");
                 for(String text : parts){
                     Log.i(TAG, text);
@@ -465,7 +465,7 @@ public class CameraTranslation extends Activity implements CvCameraViewListener2
                 TextBlock textBlock = items.valueAt(j);
                 if (textBlock != null && textBlock.getValue() != null) {
                     String textString = textBlock.getValue();
-                    textString = textString.replaceAll("\\W", " ");
+                    textString = textString.replaceAll("\\W", " ").toLowerCase();
                     String[] parts = textString.split("\\s+");
                     for(String text : parts){
                         if(database.hasThisWord(text)){

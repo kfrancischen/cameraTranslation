@@ -162,7 +162,7 @@ public class DatabaseFile {
             "check in",
             "information",
             "lost found",
-            "money exchange",
+            "money changer",
             "restroom",
             "security",
             "custom");
