@@ -315,6 +315,7 @@ public class CameraTranslation extends Activity implements CvCameraViewListener2
     @Override
     public Mat onCameraFrame(CvCameraViewFrame inputFrame){
         //Log.i(TAG, "got frame");
+        double startTime = System.currentTimeMillis();
         mRgba = inputFrame.rgba();
         mGray = inputFrame.gray();
         if(!isSearchButtonPressed){
@@ -354,7 +355,8 @@ public class CameraTranslation extends Activity implements CvCameraViewListener2
             default:
                 break;
         }
-
+        double finishTime = System.currentTimeMillis();
+        Log.i(TAG, "run time is " + Double.toString(finishTime - startTime));
         return mRgba;
     }
 
